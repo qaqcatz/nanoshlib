@@ -6,7 +6,7 @@ import (
 )
 import "testing"
 
-func ExampleExec_1() {
+func ExampleExec_normal() {
 	outStream, errStream, err := Exec("echo helloworld", 1000)
 	if err != nil {
 		fmt.Println("[err]\n" + err.Error())
@@ -21,7 +21,7 @@ func ExampleExec_1() {
 	// [err stream]
 }
 
-func ExampleExec_2() {
+func ExampleExec_timeout() {
 	_, _, err := Exec("sleep 3s", 1000)
 	if err != nil {
 		switch err.(type) {
@@ -37,7 +37,7 @@ func ExampleExec_2() {
 	// time out error
 }
 
-func ExampleExec_3() {
+func ExampleExec_error() {
 	_, _, err := Exec("sleep 3s", 0)
 	if err != nil {
 		fmt.Println("sleep 3s must succeed")
@@ -48,7 +48,7 @@ func ExampleExec_3() {
 	// succeed
 }
 
-func ExampleExec0_1() {
+func ExampleExec0_normal() {
 	killChan, err := Exec0("emulator -avd Nexus_5_API_25")
 	if err != nil {
 		fmt.Println("start command failed")
