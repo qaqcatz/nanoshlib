@@ -1,4 +1,7 @@
 # nanoshlib
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/qaqcatz/nanoshlib.svg)](https://pkg.go.dev/github.com/qaqcatz/nanoshlib)
+
 Simple and stable shell interface.
 
 Support timeout and service management.
