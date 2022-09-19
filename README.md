@@ -8,6 +8,15 @@ Support timeout and service management.
 
 # How to use
 
+## import
+
+```golang
+// go.mod:
+require github.com/qaqcatz/nanoshlib v1.0.0
+// xxx.go:
+import "github.com/qaqcatz/nanoshlib"
+```
+
 ## Exec
 
 ```golang
