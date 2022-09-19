@@ -69,9 +69,9 @@ func ExampleExec_error() {
 func Exec0(myCmdStr string) (chan int, error)
 ```
 
-Exec0 is an extension of Exec. When Exec0 is executed, it will return immediately. Exec0 does not care about the result, or even if the process is still running, it is only responsible for making sure the process can be started/killed successfully. It can be used to start/kill a service.
-Specifically, Exec0 will return killCahn, err:
-
+Exec0 is an extension of Exec. When Exec0 is executed, it will return immediately. Exec0 does not care about the result, it is only responsible for making sure the process can be started/killed successfully and checking if the process is still running. It can be used to start/monitor/kill a service.
+Specifically, Exec0 will return doneChan, killChan, err:
+- doneChan, you can use select case: <-errChan default: ... to check if the process is still running
 - killChan, you can use killChan<-0(any number) to kill the process.
 - err, command start error.
 
@@ -79,13 +79,37 @@ Specifically, Exec0 will return killCahn, err:
 
 ```golang
 func ExampleExec0_normal() {
-	killChan, err := Exec0("emulator -avd Nexus_5_API_25")
+	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test")
 	if err != nil {
 		fmt.Println("start command failed")
 	} else {
+		fmt.Println("wait 10s for start")
 		time.Sleep(10*time.Second)
-		fmt.Println("the emulator will be killed after 10s")
+		select {
+		case err := <-doneChan:
+			errStr := "no err"
+			if err != nil {
+				errStr = err.Error()
+			}
+			fmt.Println("the emulator is closed! " + errStr)
+			return
+		default:
+			fmt.Println("the emulator is running")
+		}
+		fmt.Println("kill the emulator")
 		killChan<-0
+		fmt.Println("wait 3s for kill")
+		time.Sleep(3*time.Second)
+		select {
+		case err := <-doneChan:
+			errStr := "no err"
+			if err != nil {
+				errStr = err.Error()
+			}
+			fmt.Println("the emulator is closed. " + errStr)
+		default:
+			fmt.Println("the emulator is still running!")
+		}
 	}
 }
 ```
