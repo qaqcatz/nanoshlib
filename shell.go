@@ -61,16 +61,19 @@ func Exec(cmdStr string, timeoutMS int) ([]byte, []byte, error) {
 }
 
 // Exec0 is an extension of Exec. When Exec0 is executed, it will return immediately.
-// Exec0 does not care about the result, or even if the process is still running,
-// it is only responsible for making sure the process can be started/killed successfully.
-// It can be used to start/kill a service.
+// Exec0 does not care about the result, it is only responsible for
+// making sure the process can be started/killed successfully and
+// checking if the process is still running.
+// It can be used to start/monitor/kill a service.
 //
-// Specifically, Exec0 will return killCahn, err:
+// Specifically, Exec0 will return doneChan, killChan, err:
+//
+// - doneChan, you can use select case: <-errChan default: ... to check if the process is still running
 //
 // - killChan, you can use killChan<-0(any number) to kill the process.
 //
 // - err, command start error.
-func Exec0(myCmdStr string) (chan int, error) {
+func Exec0(myCmdStr string) (chan error, chan int, error) {
 	// child process
 	cmd := exec.Command("/bin/bash", "-c", myCmdStr)
 
@@ -81,10 +84,12 @@ func Exec0(myCmdStr string) (chan int, error) {
 	cmd.Stderr = &errBuf
 
 	if err := cmd.Start(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	go func() { _ = cmd.Wait() }()
+	// Use a channel to signal completion so we can use a select statement
+	doneChan := make(chan error)
+	go func() { doneChan <- cmd.Wait() }()
 
 	// user can use killChan<-0(any number) to kill the process.
 	killChan := make(chan int)
@@ -95,6 +100,6 @@ func Exec0(myCmdStr string) (chan int, error) {
 		}
 	} ()
 
-	return killChan, nil
+	return doneChan, killChan, nil
 }
 
