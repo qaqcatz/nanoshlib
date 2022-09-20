@@ -2,6 +2,7 @@ package nanoshlib
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 import "testing"
@@ -49,7 +50,7 @@ func ExampleExec_error() {
 }
 
 func ExampleExec0_normal() {
-	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test")
+	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", false)
 	if err != nil {
 		fmt.Println("start command failed")
 	} else {
@@ -81,6 +82,16 @@ func ExampleExec0_normal() {
 			fmt.Println("the emulator is still running!")
 		}
 	}
+}
+
+func ExampleExec0_createSession() {
+	_, _, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", true)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	time.Sleep(3*time.Second)
+	// The emulator will not be killed when the program ends.
+	// If you change createSession:true to false, the emulator will be killed when the program ends.
 }
 
 func TestExecNormal(t *testing.T) {
@@ -132,46 +143,55 @@ func TestExecTimeout0(t *testing.T) {
 }
 
 // you should install an avd named 'test' first.
-//func TestExec0_Normal(t *testing.T) {
-//	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test")
-//	if err != nil {
-//		t.Fatal("start command failed")
-//	} else {
-//		t.Log("wait 10s for start")
-//		time.Sleep(10*time.Second)
-//		select {
-//		case err := <-doneChan:
-//			errStr := "no err"
-//			if err != nil {
-//				errStr = err.Error()
-//			}
-//			t.Fatal("the emulator is closed! " + errStr)
-//		default:
-//			t.Log("the emulator is running")
-//		}
-//		t.Log("kill the emulator")
-//		killChan<-0
-//		t.Log("wait 3s for kill")
-//		time.Sleep(3*time.Second)
-//		select {
-//		case err := <-doneChan:
-//			errStr := "no err"
-//			if err != nil {
-//				errStr = err.Error()
-//			}
-//			t.Log("the emulator is closed. " + errStr)
-//		default:
-//			t.Fatal("the emulator is still running!")
-//		}
-//	}
-//}
+func TestExec0_Normal(t *testing.T) {
+	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", false)
+	if err != nil {
+		t.Fatal("start command failed")
+	} else {
+		t.Log("wait 10s for start")
+		time.Sleep(10*time.Second)
+		select {
+		case err := <-doneChan:
+			errStr := "no err"
+			if err != nil {
+				errStr = err.Error()
+			}
+			t.Fatal("the emulator is closed! " + errStr)
+		default:
+			t.Log("the emulator is running")
+		}
+		t.Log("kill the emulator")
+		killChan<-0
+		t.Log("wait 3s for kill")
+		time.Sleep(3*time.Second)
+		select {
+		case err := <-doneChan:
+			errStr := "no err"
+			if err != nil {
+				errStr = err.Error()
+			}
+			t.Log("the emulator is closed. " + errStr)
+		default:
+			t.Fatal("the emulator is still running!")
+		}
+	}
+}
 
 func TestExec0_Error(t *testing.T) {
-	_, killChan, err := Exec0("top")
+	_, killChan, err := Exec0("top", false)
 	if err != nil {
-		t.Fatal("top must fail")
+		t.Fatal("top must succeed")
 	} else {
 		t.Log("kill top")
 		killChan<-0
 	}
+}
+
+// you should install an avd named 'test' first.
+func TestExec0_createSession(t *testing.T) {
+	_, _, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", true)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	time.Sleep(3*time.Second)
 }
