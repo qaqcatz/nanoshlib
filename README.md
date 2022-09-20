@@ -75,11 +75,15 @@ func ExampleExec_error() {
 ## Exec0
 
 ```golang
-func Exec0(myCmdStr string) (chan int, error)
+func Exec0(myCmdStr string, createSession bool) (chan error, chan int, error)
 ```
 
 Exec0 is an extension of Exec. When Exec0 is executed, it will return immediately. Exec0 does not care about the result, it is only responsible for making sure the process can be started/killed successfully and checking if the process is still running. It can be used to start/monitor/kill a service.
+
+You can set createSession to true to avoid the process being killed when the program ends.
+
 Specifically, Exec0 will return doneChan, killChan, err:
+
 - doneChan, you can use select case: <-errChan default: ... to check if the process is still running
 - killChan, you can use killChan<-0(any number) to kill the process.
 - err, command start error.
@@ -120,6 +124,16 @@ func ExampleExec0_normal() {
 			fmt.Println("the emulator is still running!")
 		}
 	}
+}
+
+func ExampleExec0_createSession() {
+	_, _, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", true)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	time.Sleep(3*time.Second)
+	// The emulator will not be killed when the program ends.
+	// If you change createSession:true to false, the emulator will be killed when the program ends.
 }
 ```
 
