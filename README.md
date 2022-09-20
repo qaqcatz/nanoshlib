@@ -12,7 +12,7 @@ Support timeout and service management.
 
 ```golang
 // go.mod:
-require github.com/qaqcatz/nanoshlib v1.0.0
+require github.com/qaqcatz/nanoshlib v1.1.0
 // xxx.go:
 import "github.com/qaqcatz/nanoshlib"
 ```
@@ -75,12 +75,10 @@ func ExampleExec_error() {
 ## Exec0
 
 ```golang
-func Exec0(myCmdStr string, createSession bool) (chan error, chan int, error)
+func Exec0(myCmdStr string) (chan error, chan int, error)
 ```
 
 Exec0 is an extension of Exec. When Exec0 is executed, it will return immediately. Exec0 does not care about the result, it is only responsible for making sure the process can be started/killed successfully and checking if the process is still running. It can be used to start/monitor/kill a service.
-
-You can set createSession to true to avoid the process being killed when the program ends.
 
 Specifically, Exec0 will return doneChan, killChan, err:
 
@@ -125,9 +123,19 @@ func ExampleExec0_normal() {
 		}
 	}
 }
+```
 
-func ExampleExec0_createSession() {
-	_, _, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", true)
+## Exec0s
+
+```golang
+func Exec0s(myCmdStr string) (chan error, chan int, error)
+```
+
+Exec0s is an extension of Exec0. We use cmd.SysProcAttr = &syscall.SysProcAttr{Setsid:true} to avoid the process being killed when the program ends.
+
+```golang
+func ExampleExec0s_createSession() {
+	_, _, err := Exec0s("/home/hzy/Android/Sdk/emulator/emulator -avd test")
 	if err != nil {
 		log.Fatal(err.Error())
 	}

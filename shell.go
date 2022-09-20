@@ -67,8 +67,6 @@ func Exec(cmdStr string, timeoutMS int) ([]byte, []byte, error) {
 // checking if the process is still running.
 // It can be used to start/monitor/kill a service.
 //
-// You can set createSession to true to avoid the process being killed when the program ends.
-//
 // Specifically, Exec0 will return doneChan, killChan, err:
 //
 // - doneChan, you can use select case: <-errChan default: ... to check if the process is still running
@@ -76,7 +74,7 @@ func Exec(cmdStr string, timeoutMS int) ([]byte, []byte, error) {
 // - killChan, you can use killChan<-0(any number) to kill the process.
 //
 // - err, command start error.
-func Exec0(myCmdStr string, createSession bool) (chan error, chan int, error) {
+func Exec0(myCmdStr string) (chan error, chan int, error) {
 	// child process
 	cmd := exec.Command("/bin/bash", "-c", myCmdStr)
 
@@ -86,9 +84,39 @@ func Exec0(myCmdStr string, createSession bool) (chan error, chan int, error) {
 	var errBuf bytes.Buffer
 	cmd.Stderr = &errBuf
 
-	if createSession {
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid:true}
+	if err := cmd.Start(); err != nil {
+		return nil, nil, err
 	}
+
+	// Use a channel to signal completion so we can use a select statement
+	doneChan := make(chan error)
+	go func() { doneChan <- cmd.Wait() }()
+
+	// user can use killChan<-0(any number) to kill the process.
+	killChan := make(chan int)
+	go func() {
+		select {
+		case <- killChan:
+			_ = cmd.Process.Kill()
+		}
+	} ()
+
+	return doneChan, killChan, nil
+}
+
+// Exec0s is an extension of Exec0. We use cmd.SysProcAttr = &syscall.SysProcAttr{Setsid:true}
+// to avoid the process being killed when the program ends.
+func Exec0s(myCmdStr string) (chan error, chan int, error) {
+	// child process
+	cmd := exec.Command("/bin/bash", "-c", myCmdStr)
+
+	// Use a bytes.Buffer to get the output
+	var outBuf bytes.Buffer
+	cmd.Stdout = &outBuf
+	var errBuf bytes.Buffer
+	cmd.Stderr = &errBuf
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid:true}
 
 	if err := cmd.Start(); err != nil {
 		return nil, nil, err

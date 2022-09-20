@@ -50,7 +50,7 @@ func ExampleExec_error() {
 }
 
 func ExampleExec0_normal() {
-	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", false)
+	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test")
 	if err != nil {
 		fmt.Println("start command failed")
 	} else {
@@ -84,8 +84,8 @@ func ExampleExec0_normal() {
 	}
 }
 
-func ExampleExec0_createSession() {
-	_, _, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", true)
+func ExampleExec0s_createSession() {
+	_, _, err := Exec0s("/home/hzy/Android/Sdk/emulator/emulator -avd test")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -144,7 +144,7 @@ func TestExecTimeout0(t *testing.T) {
 
 // you should install an avd named 'test' first.
 func TestExec0_Normal(t *testing.T) {
-	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", false)
+	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test")
 	if err != nil {
 		t.Fatal("start command failed")
 	} else {
@@ -178,7 +178,7 @@ func TestExec0_Normal(t *testing.T) {
 }
 
 func TestExec0_Error(t *testing.T) {
-	_, killChan, err := Exec0("top", false)
+	_, killChan, err := Exec0("top")
 	if err != nil {
 		t.Fatal("top must succeed")
 	} else {
@@ -188,8 +188,8 @@ func TestExec0_Error(t *testing.T) {
 }
 
 // you should install an avd named 'test' first.
-func TestExec0_createSession(t *testing.T) {
-	_, _, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test", true)
+func TestExec0s_createSession(t *testing.T) {
+	_, _, err := Exec0s("/home/hzy/Android/Sdk/emulator/emulator -avd test")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
