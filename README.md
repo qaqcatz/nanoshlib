@@ -34,8 +34,8 @@ func TestExecNormal(t *testing.T) {
 	if err != nil {
 		t.Fatal("[err]\n" + err.Error())
 	} else {
-		t.Log("[out stream]\n" + string(outStream))
-		t.Log("[err stream]\n" + string(errStream))
+		t.Log("[out stream]\n" + outStream)
+		t.Log("[err stream]\n" + errStream)
 	}
 }
 ```

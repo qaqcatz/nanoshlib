@@ -10,8 +10,8 @@ func TestExecNormal(t *testing.T) {
 	if err != nil {
 		t.Fatal("[err]\n" + err.Error())
 	} else {
-		t.Log("[out stream]\n" + string(outStream))
-		t.Log("[err stream]\n" + string(errStream))
+		t.Log("[out stream]\n" + outStream)
+		t.Log("[err stream]\n" + errStream)
 	}
 }
 
@@ -36,8 +36,8 @@ func TestExecError(t *testing.T) {
 		case *TimeoutError:
 			t.Fatal("top must fail but not timeout")
 		default:
-			t.Log("[out stream]\n" + string(outStream))
-			t.Log("[err stream]\n" + string(errStream))
+			t.Log("[out stream]\n" + outStream)
+			t.Log("[err stream]\n" + errStream)
 		}
 	} else {
 		t.Fatal("top must fail")
