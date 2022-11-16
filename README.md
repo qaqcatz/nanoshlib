@@ -12,7 +12,7 @@ Support timeout and service management.
 
 ```golang
 // go.mod:
-require github.com/qaqcatz/nanoshlib v1.2.0
+require github.com/qaqcatz/nanoshlib v1.3.0
 // xxx.go:
 import "github.com/qaqcatz/nanoshlib"
 ```
@@ -20,7 +20,7 @@ import "github.com/qaqcatz/nanoshlib"
 ## Exec
 
 ```golang
-func Exec(cmdStr string, timeoutMS int) ([]byte, []byte, error)
+func Exec(cmdStr string, timeoutMS int) (string, string, error)
 ```
 
 Exec use /bin/bash -c to execute cmdStr, wait for the result, or timeout, return out stream, error stream, and an error, which can be nil, normal error or *TimeoutError.
@@ -29,46 +29,14 @@ timeoutMS <= 0 means timeoutMS = inf
 **Example**
 
 ```golang
-func ExampleExec_normal() {
+func TestExecNormal(t *testing.T) {
 	outStream, errStream, err := Exec("echo helloworld", 1000)
 	if err != nil {
-		fmt.Println("[err]\n" + err.Error())
+		t.Fatal("[err]\n" + err.Error())
 	} else {
-		fmt.Println("[out stream]\n" + string(outStream))
-		fmt.Println("[err stream]\n" + string(errStream))
+		t.Log("[out stream]\n" + string(outStream))
+		t.Log("[err stream]\n" + string(errStream))
 	}
-	// Output:
-	// [out stream]
-	// helloworld
-	//
-	// [err stream]
-}
-
-func ExampleExec_timeout() {
-	_, _, err := Exec("sleep 3s", 1000)
-	if err != nil {
-		switch err.(type) {
-		case *TimeoutError:
-			fmt.Println(err.Error())
-		default:
-			fmt.Println("sleep 3s must timeout")
-		}
-	} else {
-		fmt.Println("sleep 3s must fail")
-	}
-	// Output:
-	// time out error
-}
-
-func ExampleExec_error() {
-	_, _, err := Exec("sleep 3s", 0)
-	if err != nil {
-		fmt.Println("sleep 3s must succeed")
-	} else {
-		fmt.Println("succeed")
-	}
-	// Output:
-	// succeed
 }
 ```
 
@@ -89,12 +57,13 @@ Specifically, Exec0 will return doneChan, killChan, err:
 **Example**
 
 ```golang
-func ExampleExec0_normal() {
+// you should install an avd named 'test' first.
+func TestExec0_Normal(t *testing.T) {
 	doneChan, killChan, err := Exec0("/home/hzy/Android/Sdk/emulator/emulator -avd test")
 	if err != nil {
-		fmt.Println("start command failed")
+		t.Fatal("start command failed")
 	} else {
-		fmt.Println("wait 10s for start")
+		t.Log("wait 10s for start")
 		time.Sleep(10*time.Second)
 		select {
 		case err := <-doneChan:
@@ -102,14 +71,13 @@ func ExampleExec0_normal() {
 			if err != nil {
 				errStr = err.Error()
 			}
-			fmt.Println("the emulator is closed! " + errStr)
-			return
+			t.Fatal("the emulator is closed! " + errStr)
 		default:
-			fmt.Println("the emulator is running")
+			t.Log("the emulator is running")
 		}
-		fmt.Println("kill the emulator")
+		t.Log("kill the emulator")
 		killChan<-0
-		fmt.Println("wait 3s for kill")
+		t.Log("wait 3s for kill")
 		time.Sleep(3*time.Second)
 		select {
 		case err := <-doneChan:
@@ -117,9 +85,9 @@ func ExampleExec0_normal() {
 			if err != nil {
 				errStr = err.Error()
 			}
-			fmt.Println("the emulator is closed. " + errStr)
+			t.Log("the emulator is closed. " + errStr)
 		default:
-			fmt.Println("the emulator is still running!")
+			t.Fatal("the emulator is still running!")
 		}
 	}
 }
@@ -134,14 +102,13 @@ func Exec0s(myCmdStr string) (chan error, chan int, error)
 Exec0s is an extension of Exec0. We use cmd.SysProcAttr = &syscall.SysProcAttr{Setsid:true} to avoid the process being killed when the program ends.
 
 ```golang
-func ExampleExec0s_createSession() {
+// you should install an avd named 'test' first.
+func TestExec0s_createSession(t *testing.T) {
 	_, _, err := Exec0s("/home/hzy/Android/Sdk/emulator/emulator -avd test")
 	if err != nil {
-		log.Fatal(err.Error())
+		t.Fatal(err.Error())
 	}
 	time.Sleep(3*time.Second)
-	// The emulator will not be killed when the program ends.
-	// If you change createSession:true to false, the emulator will be killed when the program ends.
 }
 ```
 

@@ -11,7 +11,7 @@ import (
 // and an error, which can be nil, normal error or *TimeoutError.
 //
 // timeoutMS <= 0 means timeoutMS = inf
-func Exec(cmdStr string, timeoutMS int) ([]byte, []byte, error) {
+func Exec(cmdStr string, timeoutMS int) (string, string, error) {
 	// child process
 	cmd := exec.Command("/bin/bash", "-c", cmdStr)
 
@@ -22,7 +22,7 @@ func Exec(cmdStr string, timeoutMS int) ([]byte, []byte, error) {
 	cmd.Stderr = &errBuf
 
 	if err := cmd.Start(); err != nil {
-		return nil, nil, err
+		return "", "", err
 	}
 
 	// Use a channel to signal completion so we can use a select statement
@@ -39,14 +39,14 @@ func Exec(cmdStr string, timeoutMS int) ([]byte, []byte, error) {
 			// Timeout happened first, kill the process and print a message.
 			// The reason why I don't use context.WithTimeout() is that sometimes it can not kill the child process
 			_ = cmd.Process.Kill()
-			return outBuf.Bytes(), errBuf.Bytes(), &TimeoutError{}
+			return outBuf.String(), errBuf.String(), &TimeoutError{}
 		case err := <-done:
 			// Command completed before timeout. Print output and error if it exists.
 			if err != nil {
 				// This branch means that the return value of cmd != 0
-				return outBuf.Bytes(), errBuf.Bytes(), err
+				return outBuf.String(), errBuf.String(), err
 			}
-			return outBuf.Bytes(), errBuf.Bytes(), nil
+			return outBuf.String(), errBuf.String(), nil
 		}
 	} else {
 		select {
@@ -54,9 +54,9 @@ func Exec(cmdStr string, timeoutMS int) ([]byte, []byte, error) {
 			// Command completed before timeout. Print output and error if it exists.
 			if err != nil {
 				// This branch means that the return value of cmd != 0
-				return outBuf.Bytes(), errBuf.Bytes(), err
+				return outBuf.String(), errBuf.String(), err
 			}
-			return outBuf.Bytes(), errBuf.Bytes(), nil
+			return outBuf.String(), errBuf.String(), nil
 		}
 	}
 }
