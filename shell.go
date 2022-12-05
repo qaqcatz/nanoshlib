@@ -2,6 +2,7 @@ package nanoshlib
 
 import (
 	"bytes"
+	"os"
 	"os/exec"
 	"syscall"
 	"time"
@@ -138,3 +139,50 @@ func Exec0s(myCmdStr string) (chan error, chan int, error) {
 	return doneChan, killChan, nil
 }
 
+// ExecStd: likes Exec, but write the result to standard output stream and standard error stream.
+func ExecStd(cmdStr string, timeoutMS int) error {
+	// child process
+	cmd := exec.Command("/bin/bash", "-c", cmdStr)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	// Use a channel to signal completion so we can use a select statement
+	done := make(chan error)
+	go func() { done <- cmd.Wait() }()
+
+	if timeoutMS > 0 {
+		// Start a timer
+		timeout := time.After(time.Duration(timeoutMS) * time.Millisecond)
+
+		// The select statement allows us to execute based on which channel we get a message from first.
+		select {
+		case <-timeout:
+			// Timeout happened first, kill the process and print a message.
+			// The reason why I don't use context.WithTimeout() is that sometimes it can not kill the child process
+			_ = cmd.Process.Kill()
+			return &TimeoutError{}
+		case err := <-done:
+			// Command completed before timeout. Print output and error if it exists.
+			if err != nil {
+				// This branch means that the return value of cmd != 0
+				return err
+			}
+			return nil
+		}
+	} else {
+		select {
+		case err := <-done:
+			// Command completed before timeout. Print output and error if it exists.
+			if err != nil {
+				// This branch means that the return value of cmd != 0
+				return err
+			}
+			return nil
+		}
+	}
+}

@@ -106,3 +106,10 @@ func TestExec0s_createSession(t *testing.T) {
 	}
 	time.Sleep(3*time.Second)
 }
+
+func TestExecStd(t *testing.T) {
+	err := ExecStd("echo hello && sleep 1s && echo hello && sleep 1s && echo hello", 5000)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
