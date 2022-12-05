@@ -111,4 +111,6 @@ func TestExec0s_createSession(t *testing.T) {
 	time.Sleep(3*time.Second)
 }
 ```
+## ExecStd
 
+Likes Exec, but write the result to standard output stream and standard error stream.
