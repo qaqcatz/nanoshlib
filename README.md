@@ -12,7 +12,7 @@ Support timeout and service management.
 
 ```golang
 // go.mod:
-require github.com/qaqcatz/nanoshlib v1.3.0
+require github.com/qaqcatz/nanoshlib v1.4.0
 // xxx.go:
 import "github.com/qaqcatz/nanoshlib"
 ```
