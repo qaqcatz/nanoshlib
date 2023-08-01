@@ -2,6 +2,7 @@ package nanoshlib
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"os/exec"
 	"syscall"
@@ -183,6 +184,76 @@ func ExecStd(cmdStr string, timeoutMS int) error {
 				return err
 			}
 			return nil
+		}
+	}
+}
+
+// ExecStd: likes ExecStdX, but it also returns the outStream and errStream.
+func ExecStdX(cmdStr string, timeoutMS int) (string, string, error) {
+	// child process
+	cmd := exec.Command("/bin/bash", "-c", cmdStr)
+
+	var outputBuf, errBuf bytes.Buffer
+
+	// create pipeline
+	outPipeReader, outPipeWriter := io.Pipe()
+	errPipeReader, errPipeWriter := io.Pipe()
+	cmd.Stdout = io.MultiWriter(outPipeWriter, &outputBuf)
+	cmd.Stderr = io.MultiWriter(errPipeWriter, &errBuf)
+
+	go func() {
+		defer outPipeWriter.Close()
+		io.Copy(os.Stdout, outPipeReader)
+	}()
+
+	go func() {
+		defer errPipeWriter.Close()
+		io.Copy(os.Stderr, errPipeReader)
+	}()
+
+	defer func() {
+		outPipeWriter.Close()
+		outPipeReader.Close()
+		errPipeWriter.Close()
+		errPipeReader.Close()
+	}()
+
+	if err := cmd.Start(); err != nil {
+		return outputBuf.String(), errBuf.String(), err
+	}
+
+	// Use a channel to signal completion so we can use a select statement
+	done := make(chan error)
+	go func() { done <- cmd.Wait() }()
+
+	if timeoutMS > 0 {
+		// Start a timer
+		timeout := time.After(time.Duration(timeoutMS) * time.Millisecond)
+
+		// The select statement allows us to execute based on which channel we get a message from first.
+		select {
+		case <-timeout:
+			// Timeout happened first, kill the process and print a message.
+			// The reason why I don't use context.WithTimeout() is that sometimes it can not kill the child process
+			_ = cmd.Process.Kill()
+			return outputBuf.String(), errBuf.String(), &TimeoutError{}
+		case err := <-done:
+			// Command completed before timeout. Print output and error if it exists.
+			if err != nil {
+				// This branch means that the return value of cmd != 0
+				return outputBuf.String(), errBuf.String(), err
+			}
+			return outputBuf.String(), errBuf.String(), nil
+		}
+	} else {
+		select {
+		case err := <-done:
+			// Command completed before timeout. Print output and error if it exists.
+			if err != nil {
+				// This branch means that the return value of cmd != 0
+				return outputBuf.String(), errBuf.String(), err
+			}
+			return outputBuf.String(), errBuf.String(), nil
 		}
 	}
 }

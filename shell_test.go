@@ -1,8 +1,8 @@
 package nanoshlib
 
 import (
-	"time"
 	"testing"
+	"time"
 )
 
 func TestExecNormal(t *testing.T) {
@@ -111,5 +111,24 @@ func TestExecStd(t *testing.T) {
 	err := ExecStd("echo hello && sleep 1s && echo hello && sleep 1s && echo hello", 5000)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecStdX(t *testing.T) {
+	outStream, errStream, err := ExecStdX("echo hello && sleep 1s && echo hello && sleep 1s && echo hello", 5000)
+	if err != nil {
+		t.Fatal(err, errStream)
+	}
+	t.Log("out:", outStream)
+	t.Log("err:", errStream)
+}
+
+func TestExecStdX2(t *testing.T) {
+	outStream, errStream, err := ExecStdX("abcxyz", 5000)
+	if err == nil {
+		t.Fatal("expect an error")
+	} else {
+		t.Log("out:", outStream)
+		t.Log("err:", errStream)
 	}
 }

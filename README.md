@@ -12,7 +12,7 @@ Support timeout and service management.
 
 ```golang
 // go.mod:
-require github.com/qaqcatz/nanoshlib v1.4.0
+require github.com/qaqcatz/nanoshlib v1.5.0
 // xxx.go:
 import "github.com/qaqcatz/nanoshlib"
 ```
@@ -114,3 +114,7 @@ func TestExec0s_createSession(t *testing.T) {
 ## ExecStd
 
 Likes Exec, but write the result to standard output stream and standard error stream.
+
+## ExecStdX
+
+likes ExecStdX, but it also returns the outStream and errStream.
